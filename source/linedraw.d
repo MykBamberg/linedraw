@@ -241,7 +241,7 @@ private Point[][] getContours(int delegate(int x, int y) getPixelBrightness, int
     }
 
     return contours
-        .remove!(a => a is null)
+        .remove!(a => a is null || a.length <= strokeScale)
         .map!((contour) {
             Point averagePoints(Point[] points) {
                 Point sum = Point(0, 0);
@@ -306,7 +306,7 @@ private Point[][] hatch(bool diagonal, int threshold, bool offset)(
         resetPosition = getResetPosition(resetPosition.get());
     } while (!resetPosition.isNull);
 
-    return lines;
+    return lines.remove!(a => a.length <= 1);
 }
 
 private Point[][] getHatch(int delegate(int x, int y) getPixelBrightness, int w, int h, int hatchScale) {
