@@ -29,6 +29,10 @@ import fast_noise;
 
 struct Point {
     int x, y;
+
+    Point opBinary(string op)(Point rhs) const if (op == "+") {
+        return Point(x + rhs.x, y + rhs.y);
+    }
 }
 
 private struct Pointf {
@@ -145,6 +149,68 @@ private pure nothrow Point[][] connectDots(string dir)(int[][] dots, int maxCoor
     return contours;
 }
 
+private class PathTerminalGrid {
+    struct Terminal {
+        Point p;
+        size_t index;
+        bool isEnd;
+        enum invalid = Terminal(Point(0, 0), size_t.max, false);
+    }
+
+    private int radius;
+    private Terminal[][Point] map;
+
+    this(int maxX, int maxY, int radius) {
+        this.radius = radius;
+    }
+
+    void insert(size_t i, in Point[] path) {
+        insert(i, path[0], false);
+        insert(i, path[$-1], true);
+    }
+
+    void insert(size_t index, Point p, bool isLastPoint) {
+        Point cell = Point(p.x / radius, p.y / radius);
+        if ((cell in map) !is null) {
+            map[cell] ~= Terminal(p, index, isLastPoint);
+        } else {
+            map[cell] = [Terminal(p, index, isLastPoint)];
+        }
+    }
+
+    Terminal popClosest(Point p, size_t excludeIndex = size_t.max) {
+        alias dist = (Point a) => hypot(cast(float)(a.x - p.x), cast(float)(a.y - p.y));
+
+        float closestDist = float.max;
+        Point closestKey;
+        size_t closestIndex;
+
+        Point tlKey = Point(p.x / radius - 1, p.y / radius - 1);
+
+        foreach (tKey; [tlKey, tlKey + Point(0, 1), tlKey + Point(0, 2)]) {
+            foreach (key; [tKey, tKey + Point(1, 0), tKey + Point(2, 0)]) {
+                if ((key in map) !is null) {
+                    foreach(i, t; map[key]) {
+                        if (t.index != excludeIndex && dist(t.p) < closestDist) {
+                            closestDist = dist(t.p);
+                            closestKey = key;
+                            closestIndex = i;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (closestDist <= cast(float)radius) {
+            Terminal result = map[closestKey][closestIndex];
+            map[closestKey][closestIndex].p = Point(int.min, int.min);
+            return result;
+        }
+
+        return Terminal.invalid;
+    }
+}
+
 private Point[][] getContours(int delegate(int x, int y) getPixelBrightness, int w, int h, int strokeScale) {
     bool[][] edges = sobelFilter(getPixelBrightness, w, h);
 
@@ -154,20 +220,24 @@ private Point[][] getContours(int delegate(int x, int y) getPixelBrightness, int
     connectDotsHTask.executeInNewThread();
     Point[][] contours = connectDotsHTask.yieldForce ~ connectDotsVTask.yieldForce;
 
-    alias distance = (a, b) => hypot(cast(float)(a.x - b.x), cast(float)(a.y - b.y));
+    PathTerminalGrid grid = new PathTerminalGrid(w, h, strokeScale);
 
-    foreach (ref contourA; contours) {
-        foreach (ref contourB; contours) {
-            if (contourB is null) {
-                continue;
-            }
-
-            if (distance(contourA[0], contourB[$-1]) < strokeScale) {
-                contourB ~= contourA;
-                contourA = null;
-                break;
-            }
+    foreach (i, ref contour; contours) {
+        auto closest = grid.popClosest(contour[0], i);
+        if (closest == PathTerminalGrid.Terminal.invalid) {
+            grid.insert(i, contour);
+            continue;
         }
+
+        if (closest.isEnd) {
+            contours[closest.index] ~= contour;
+            grid.insert(closest.index, contour[$-1], true);
+        } else {
+            contours[closest.index] = reverse(contour) ~ contours[closest.index];
+            grid.insert(closest.index, contour[0], false);
+        }
+
+        contour = null;
     }
 
     return contours
