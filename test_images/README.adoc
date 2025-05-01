@@ -1,0 +1,8 @@
+= Image Attribution 
+:hide-uri-scheme:
+:hardbreaks-option:
+
+The image `test_images/antennas.png` is a derivative work based on "Antenna of Willis Tower, Chicago, IL.jpg" by the Library of Congress, licensed under CC BY-SA 4.0.
+Modifications: Gamma correction applied.
+Original image available at: https://commons.wikimedia.org/wiki/File:Antenna_of_Willis_Tower,_Chicago,_IL.jpg
+License details: https://creativecommons.org/licenses/by-sa/4.0/

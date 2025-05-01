@@ -1,0 +1,13 @@
+{
+	"authors": [
+		"MykBamberg"
+	],
+	"copyright": "Copyright © 2025, Mykolas Bamberg",
+	"dependencies": {
+		"fast_noise": "~>1.0.5",
+		"imagefmt": "~>2.1.2"
+	},
+	"description": "LingDong-/linedraw algorithm implemented in D",
+	"license": "AGPL-3.0-or-later",
+	"name": "linedraw"
+}
