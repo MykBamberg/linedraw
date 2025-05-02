@@ -323,7 +323,7 @@ private void addNoise(ref Pointf[][] paths, float noiseScale) {
     alias perlinNoise = (float a, float b) => Pointf(fnlGetNoise2D(&noise, a, b), fnlGetNoise2D(&noise, -a, -b));
 
     foreach (i, ref path; paths) {
-        float len = 0;
+        float len = path.length * 7.0f + i * 11.0f;
         Pointf last = path[0];
         foreach (j, ref p; path) {
             len += hypot(p.x - last.x, p.y - last.y);
