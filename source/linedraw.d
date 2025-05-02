@@ -337,7 +337,9 @@ private pure nothrow void sortPaths(ref Pointf[][] paths) {
     alias distancePoints = (Pointf p0, Pointf p1) => abs(p0.x - p1.x) + abs(p0.y - p1.y);
     alias distance = (Pointf p, Pointf[] path) => min(distancePoints(p, path[0]), distancePoints(p, path[$-1]));
 
-    if (paths.length == 0) return;
+    if (paths.length == 0) {
+        return;
+    }
 
     foreach (i; 0..paths.length - 1) {
         size_t closestPathIndex;
@@ -406,23 +408,23 @@ Pointf[][] linedraw(ubyte[] image, int w, int h, int contourDetail, int hatchSca
         return (13_926 * p[0] + 46_884 * p[1] + 4725 * p[2]) >> 16;
     };
 
-    if (contourDetail != 0) {
+    if (contourDetail > 0) {
         output ~= getContours(getPixelBrightness, w, h, contourDetail);
     }
 
-    if (hatchScale != 0) {
+    if (hatchScale > 0) {
         output ~= getHatch(getPixelBrightness, w, h, hatchScale);
     }
 
     Pointf[][] outputf = output.map!((path) => path.map!((p) => Pointf(p.x, p.y)).array).array;
 
     if (noiseScale > 0f) {
-        addNoise(outputf, noiseScale);
+        outputf.addNoise(noiseScale);
     }
 
     if (optimizeRoute) {
-        sortPaths(outputf);
-        removeShallowVertices(outputf);
+        outputf.sortPaths();
+        outputf.removeShallowVertices();
     }
 
     return outputf;
